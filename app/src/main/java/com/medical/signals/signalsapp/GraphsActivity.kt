@@ -8,16 +8,50 @@ import android.support.v7.widget.Toolbar
 import android.view.Menu
 import android.view.MenuItem
 import com.jjoe64.graphview.GraphView
+import com.jjoe64.graphview.series.BaseSeries
 import com.jjoe64.graphview.series.DataPoint
 import com.jjoe64.graphview.series.LineGraphSeries
+import com.medical.signals.signalsapp.data.*
 
 class GraphsActivity : AppCompatActivity() {
-    private val TIME = 0
-    private val BP = 1
-    private val ECG = 2
-    private val SO2 = 3
-    private val REST1 = 4
-    private val REST2 = 5
+    companion object {
+        private const val TIME = 0
+        private const val BP = 1
+        private const val ECG = 2
+        private const val SO2 = 3
+        private const val REST1 = 4
+        private const val REST2 = 5
+
+        private const val INITIAL_DATA = 20
+
+        private const val MAX_DATA_POINT = 100
+
+        private val sensorColors = mapOf(
+                Pair(SensorType.BP, Color.BLUE),
+                Pair(SensorType.ECG, Color.RED),
+                Pair(SensorType.SO2, Color.YELLOW),
+                Pair(SensorType.Rest1, Color.CYAN),
+                Pair(SensorType.Rest2, Color.GREEN)
+        )
+    }
+
+    private val dataProvider: DataProvider = DummyDataProvider(MyDataEventListener(this), INITIAL_DATA)
+    private val graphSeries: Map<SensorType, BaseSeries<DataPoint>>
+
+    init {
+        val series = mutableMapOf<SensorType, BaseSeries<DataPoint>>()
+        for (sensor in SensorType.values()) {
+            series[sensor] = LineGraphSeries<DataPoint>()
+        }
+        this.graphSeries = series
+    }
+
+    private class MyDataEventListener(val activity: GraphsActivity) : DataEventListener {
+        override fun onNewData(data: DataPackage) {
+            val series = activity.graphSeries[data.sensor] ?: throw RuntimeException("Curious")
+            series.appendData(DataPoint(data.time, data.value), true, GraphsActivity.MAX_DATA_POINT)
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -26,33 +60,23 @@ class GraphsActivity : AppCompatActivity() {
         setSupportActionBar(toolbar)
 
         val fab = findViewById<FloatingActionButton>(R.id.fab)
-        fab.setOnClickListener { view ->
-            val signals = DummyDataProvider().readAllSignals()
-            makeGraph(signals)
+        fab.setOnClickListener {
+            makeGraph()
         }
     }
 
-    private fun makeGraph(signals: List<List<Double>>) {
+    private fun makeGraph() {
         val graph = findViewById<GraphView>(R.id.graph)
-
-        val n = signals.size
-
-        addSeries(signals, graph, n, BP, Color.BLUE)
-        addSeries(signals, graph, n, ECG, Color.RED)
-        addSeries(signals, graph, n, SO2, Color.YELLOW)
-        addSeries(signals, graph, n, REST1, Color.CYAN)
-        addSeries(signals, graph, n, REST2, Color.GREEN)
-
-    }
-
-    private fun addSeries(signals: List<List<Double>>, graph: GraphView, n: Int, data: Int, color: Int) {
-        val points = arrayOfNulls<DataPoint>(n)
-        for (i in 0 until n) {
-            points[i] = DataPoint(signals[i][TIME], signals[i][data])
+        graph.viewport.isXAxisBoundsManual = true
+        graph.viewport.setMinX(0.0)
+        graph.viewport.setMaxX(30.0)
+        val signals = dataProvider.getInitialSignals()
+        for ((sensor, data) in signals.entries) {
+            val series = graphSeries[sensor] ?: throw RuntimeException("Curious")
+            data.forEach { series.appendData(DataPoint(it.time, it.value), true, MAX_DATA_POINT) }
+            series.color = sensorColors[sensor] ?: throw RuntimeException("Curious")
+            graph.addSeries(series)
         }
-        val series = LineGraphSeries<DataPoint>(points)
-        graph.addSeries(series)
-        series.color = color
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
