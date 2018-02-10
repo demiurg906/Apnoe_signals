@@ -19,7 +19,6 @@ import java.io.IOException
 import java.util.ArrayList
 
 class GraphsActivity : AppCompatActivity() {
-    private val SIGNALS_FILENAME = "signals/signals.txt"
     private val TIME = 0
     private val BP = 1
     private val ECG = 2
@@ -37,14 +36,8 @@ class GraphsActivity : AppCompatActivity() {
 
         val fab = findViewById<FloatingActionButton>(R.id.fab)
         fab.setOnClickListener { view ->
-            val signals = readSignals()
-            if (signals != null) {
-                makeGraph(signals)
-
-            } else {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show()
-            }
+            val signals = DummyDataProvider().readAllSignals()
+            makeGraph(signals)
         }
     }
 
@@ -52,7 +45,7 @@ class GraphsActivity : AppCompatActivity() {
         val graph = findViewById<GraphView>(R.id.graph)
 
         val n = signals.size
-        //        int n = 10;
+
         addSeries(signals, graph, n, BP, Color.BLUE)
         addSeries(signals, graph, n, ECG, Color.RED)
         addSeries(signals, graph, n, SO2, Color.YELLOW)
@@ -69,32 +62,6 @@ class GraphsActivity : AppCompatActivity() {
         val series = LineGraphSeries<DataPoint>(points)
         graph.addSeries(series)
         series.color = color
-    }
-
-    private fun readSignals(): List<List<Double>>? {
-        val sdcard = Environment.getExternalStorageDirectory()
-        val file = File(sdcard, SIGNALS_FILENAME)
-        val signals = ArrayList<List<Double>>()
-        try {
-            val reader = BufferedReader(FileReader(file))
-            val headers = reader.readLine()
-            var line = reader.readLine()
-            while (line != null) {
-                val values = line.split(";".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
-                val row = ArrayList<Double>()
-                for (value in values) {
-                    row.add(java.lang.Double.parseDouble(value))
-                }
-                signals.add(row)
-                line = reader.readLine()
-            }
-            reader.close()
-        } catch (e: IOException) {
-            e.printStackTrace()
-            return null
-        }
-
-        return signals
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
