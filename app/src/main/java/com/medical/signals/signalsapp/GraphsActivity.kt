@@ -15,16 +15,9 @@ import com.medical.signals.signalsapp.data.*
 
 class GraphsActivity : AppCompatActivity() {
     companion object {
-        private const val TIME = 0
-        private const val BP = 1
-        private const val ECG = 2
-        private const val SO2 = 3
-        private const val REST1 = 4
-        private const val REST2 = 5
-
-        private const val INITIAL_DATA = 20
-
-        private const val MAX_DATA_POINT = 100
+        private const val INITIAL_DATA = 10
+        private const val MAX_DATA_POINT = 60
+        private const val MAX_X_BOUND = 30.0
 
         private val sensorColors = mapOf(
                 Pair(SensorType.BP, Color.BLUE),
@@ -32,6 +25,21 @@ class GraphsActivity : AppCompatActivity() {
                 Pair(SensorType.SO2, Color.YELLOW),
                 Pair(SensorType.Rest1, Color.CYAN),
                 Pair(SensorType.Rest2, Color.GREEN)
+        )
+
+        private enum class ScaleType {Big, Small}
+
+        private val componentsMap = mapOf(
+                ScaleType.Big to R.id.graph_big,
+                ScaleType.Small to R.id.graph_small
+        )
+
+        private val sensorSizes = mapOf(
+                SensorType.BP to ScaleType.Big,
+                SensorType.ECG to ScaleType.Small,
+                SensorType.SO2 to ScaleType.Big,
+                SensorType.Rest1 to ScaleType.Small,
+                SensorType.Rest2 to ScaleType.Small
         )
     }
 
@@ -66,12 +74,17 @@ class GraphsActivity : AppCompatActivity() {
     }
 
     private fun makeGraph() {
-        val graph = findViewById<GraphView>(R.id.graph)
-        graph.viewport.isXAxisBoundsManual = true
-        graph.viewport.setMinX(0.0)
-        graph.viewport.setMaxX(30.0)
+        componentsMap.values.forEach {
+            val graph = findViewById<GraphView>(it)
+            graph.viewport.isXAxisBoundsManual = true
+            graph.viewport.setMinX(0.0)
+            graph.viewport.setMaxX(MAX_X_BOUND)
+        }
+
         val signals = dataProvider.getInitialSignals()
         for ((sensor, data) in signals.entries) {
+            val size = sensorSizes[sensor] ?: throw RuntimeException("curious")
+            val graph = findViewById<GraphView>(componentsMap[size] ?: -1)
             val series = graphSeries[sensor] ?: throw RuntimeException("Curious")
             data.forEach { series.appendData(DataPoint(it.time, it.value), true, MAX_DATA_POINT) }
             series.color = sensorColors[sensor] ?: throw RuntimeException("Curious")
