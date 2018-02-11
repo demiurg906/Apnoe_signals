@@ -12,12 +12,16 @@ import com.jjoe64.graphview.series.BaseSeries
 import com.jjoe64.graphview.series.DataPoint
 import com.jjoe64.graphview.series.LineGraphSeries
 import com.medical.signals.signalsapp.data.*
+import java.util.concurrent.ConcurrentLinkedDeque
+import kotlin.concurrent.thread
 
 class GraphsActivity : AppCompatActivity() {
     companion object {
         private const val INITIAL_DATA = 10
         private const val MAX_DATA_POINT = 60
         private const val MAX_X_BOUND = 30.0
+
+        private const val TASK_HANDLER_DELAY: Long = 500
 
         private val sensorColors = mapOf(
                 Pair(SensorType.BP, Color.BLUE),
@@ -46,18 +50,34 @@ class GraphsActivity : AppCompatActivity() {
     private val dataProvider: DataProvider = DummyDataProvider(MyDataEventListener(this), INITIAL_DATA)
     private val graphSeries: Map<SensorType, BaseSeries<DataPoint>>
 
+    private val tasks = ConcurrentLinkedDeque<DataPackage>()
+    private val tasksHandler: Thread
+
     init {
         val series = mutableMapOf<SensorType, BaseSeries<DataPoint>>()
         for (sensor in SensorType.values()) {
             series[sensor] = LineGraphSeries<DataPoint>()
         }
         this.graphSeries = series
+
+        tasksHandler = thread(start = false) {
+            while (true) {
+                if (tasks.isEmpty()) {
+                    Thread.sleep(TASK_HANDLER_DELAY)
+                    continue
+                }
+                val data = tasks.removeFirst()
+                runOnUiThread {
+                    val series = graphSeries[data.sensor] ?: return@runOnUiThread
+                    series.appendData(DataPoint(data.time, data.value), true, GraphsActivity.MAX_DATA_POINT)
+                }
+            }
+        }
     }
 
     private class MyDataEventListener(val activity: GraphsActivity) : DataEventListener {
         override fun onNewData(data: DataPackage) {
-            val series = activity.graphSeries[data.sensor] ?: throw RuntimeException("Curious")
-            series.appendData(DataPoint(data.time, data.value), true, GraphsActivity.MAX_DATA_POINT)
+            activity.tasks.addLast(data)
         }
     }
 
@@ -69,11 +89,11 @@ class GraphsActivity : AppCompatActivity() {
 
         val fab = findViewById<FloatingActionButton>(R.id.fab)
         fab.setOnClickListener {
-            makeGraph()
+            startServing()
         }
     }
 
-    private fun makeGraph() {
+    private fun startServing() {
         componentsMap.values.forEach {
             val graph = findViewById<GraphView>(it)
             graph.viewport.isXAxisBoundsManual = true
@@ -86,10 +106,11 @@ class GraphsActivity : AppCompatActivity() {
             val size = sensorSizes[sensor] ?: throw RuntimeException("curious")
             val graph = findViewById<GraphView>(componentsMap[size] ?: -1)
             val series = graphSeries[sensor] ?: throw RuntimeException("Curious")
-            data.forEach { series.appendData(DataPoint(it.time, it.value), true, MAX_DATA_POINT) }
+            data.forEach { series.appendData(DataPoint(it.time, it.value), false, MAX_DATA_POINT) }
             series.color = sensorColors[sensor] ?: throw RuntimeException("Curious")
             graph.addSeries(series)
         }
+        tasksHandler.start()
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
