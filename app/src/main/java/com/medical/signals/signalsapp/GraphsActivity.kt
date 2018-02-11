@@ -3,7 +3,6 @@ package com.medical.signals.signalsapp
 import android.graphics.Color
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
-import android.support.design.widget.FloatingActionButton
 import android.support.v7.widget.Toolbar
 import android.view.Menu
 import android.view.MenuItem
@@ -19,7 +18,7 @@ class GraphsActivity : AppCompatActivity() {
     companion object {
         private const val INITIAL_DATA = 10
         private const val MAX_DATA_POINT = 60
-        private const val MAX_X_BOUND = 30.0
+        private const val MAX_X_BOUND = 60.0
 
         private const val TASK_HANDLER_DELAY: Long = 500
 
@@ -44,6 +43,11 @@ class GraphsActivity : AppCompatActivity() {
                 SensorType.SO2 to ScaleType.Big,
                 SensorType.Rest1 to ScaleType.Small,
                 SensorType.Rest2 to ScaleType.Small
+        )
+
+        private val maxYBoundaries = mapOf(
+                ScaleType.Big to 150.0,
+                ScaleType.Small to 0.4
         )
     }
 
@@ -87,18 +91,20 @@ class GraphsActivity : AppCompatActivity() {
         val toolbar = findViewById<Toolbar>(R.id.toolbar)
         setSupportActionBar(toolbar)
 
-        val fab = findViewById<FloatingActionButton>(R.id.fab)
-        fab.setOnClickListener {
-            startServing()
-        }
+        startServing()
     }
 
     private fun startServing() {
-        componentsMap.values.forEach {
-            val graph = findViewById<GraphView>(it)
-            graph.viewport.isXAxisBoundsManual = true
-            graph.viewport.setMinX(0.0)
-            graph.viewport.setMaxX(MAX_X_BOUND)
+        componentsMap.entries.forEach {
+            val graph = findViewById<GraphView>(it.value)
+            with(graph.viewport) {
+                isXAxisBoundsManual = true
+                setMinX(0.0)
+                setMaxX(MAX_X_BOUND)
+                isYAxisBoundsManual = true
+                setMinY(0.0)
+                setMaxY(maxYBoundaries[it.key]!!)
+            }
         }
 
         val signals = dataProvider.getInitialSignals()
