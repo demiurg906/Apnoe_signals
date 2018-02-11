@@ -1,8 +1,8 @@
 package com.medical.signals.signalsapp
 
 import android.graphics.Color
-import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
+import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.Toolbar
 import android.view.Menu
 import android.view.MenuItem
@@ -31,11 +31,6 @@ class GraphsActivity : AppCompatActivity() {
         )
 
         private enum class ScaleType {Big, Small}
-
-        private val componentsMap = mapOf(
-                ScaleType.Big to R.id.graph_big,
-                ScaleType.Small to R.id.graph_small
-        )
 
         private val sensorSizes = mapOf(
                 SensorType.BP to ScaleType.Big,
@@ -95,26 +90,36 @@ class GraphsActivity : AppCompatActivity() {
     }
 
     private fun startServing() {
-        componentsMap.entries.forEach {
-            val graph = findViewById<GraphView>(it.value)
-            with(graph.viewport) {
-                isXAxisBoundsManual = true
-                setMinX(0.0)
-                setMaxX(MAX_X_BOUND)
-                isYAxisBoundsManual = true
-                setMinY(0.0)
-                setMaxY(maxYBoundaries[it.key]!!)
-            }
+        val graph = findViewById<GraphView>(R.id.graph)
+
+        with (graph.viewport) {
+            isXAxisBoundsManual = true
+            setMinX(0.0)
+            setMaxX(MAX_X_BOUND)
+            isYAxisBoundsManual = true
+            setMinY(0.0)
+            setMaxY(maxYBoundaries[ScaleType.Small]!!)
+
+            isScrollable = true
+            setScrollableY(true)
+        }
+
+        with(graph.secondScale) {
+            setMinY(0.0)
+            setMaxY(maxYBoundaries[ScaleType.Big]!!)
         }
 
         val signals = dataProvider.getInitialSignals()
         for ((sensor, data) in signals.entries) {
             val size = sensorSizes[sensor] ?: throw RuntimeException("curious")
-            val graph = findViewById<GraphView>(componentsMap[size] ?: -1)
             val series = graphSeries[sensor] ?: throw RuntimeException("Curious")
             data.forEach { series.appendData(DataPoint(it.time, it.value), false, MAX_DATA_POINT) }
             series.color = sensorColors[sensor] ?: throw RuntimeException("Curious")
-            graph.addSeries(series)
+            if (size == ScaleType.Small) {
+                graph.addSeries(series)
+            } else {
+                graph.secondScale.addSeries(series)
+            }
         }
         tasksHandler.start()
     }

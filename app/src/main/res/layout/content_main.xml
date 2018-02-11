@@ -19,18 +19,12 @@
         app:layout_constraintTop_toTopOf="parent">
 
         <com.jjoe64.graphview.GraphView
-            android:id="@+id/graph_big"
-            android:layout_width="288dp"
-            android:layout_height="match_parent"
-            tools:layout_editor_absoluteX="0dp"
-            tools:layout_editor_absoluteY="0dp" />
-
-        <com.jjoe64.graphview.GraphView
-            android:id="@+id/graph_small"
+            android:id="@+id/graph"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             tools:layout_editor_absoluteX="0dp"
             tools:layout_editor_absoluteY="0dp" />
+
     </LinearLayout>
 
 </android.support.constraint.ConstraintLayout>
