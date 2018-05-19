@@ -9,21 +9,37 @@
     tools:showIn="@layout/activity_main">
 
     <LinearLayout
-        android:layout_width="576dp"
-        android:layout_height="247dp"
-        android:gravity="top"
-        android:orientation="horizontal"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
 
-        <com.jjoe64.graphview.GraphView
-            android:id="@+id/graph"
+        <TextView
+            android:id="@+id/textView"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            tools:layout_editor_absoluteX="0dp"
-            tools:layout_editor_absoluteY="0dp" />
+            android:layout_height="25dp"
+            android:baselineAligned="false"
+            android:text="TextView"
+            tools:layout_editor_absoluteX="81dp"
+            tools:layout_editor_absoluteY="29dp"
+            tools:text="Введите ФИО пациента" />
+
+        <EditText
+            android:id="@+id/editText3"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ems="10"
+            android:inputType="textPersonName"
+            android:text="ФИО"
+            tools:layout_editor_absoluteX="58dp"
+            tools:layout_editor_absoluteY="72dp" />
+
+        <Button
+            android:id="@+id/toParametersButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Далее"
+            tools:layout_editor_absoluteX="127dp"
+            tools:layout_editor_absoluteY="140dp" />
 
     </LinearLayout>
 
