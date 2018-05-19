@@ -19,7 +19,7 @@ class GraphsActivity : AppCompatActivity() {
         private const val MAX_DATA_POINT = 60
         private const val MAX_X_BOUND = 60.0
 
-        private const val TASK_HANDLER_DELAY: Long = 500
+        private const val TASK_HANDLER_DELAY: Long = 1000
 
         private val sensorColors = mapOf(
                 Pair(SensorType.BP, Color.BLUE),
